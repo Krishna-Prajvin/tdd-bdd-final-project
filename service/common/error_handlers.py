@@ -18,7 +18,7 @@ from flask import jsonify
 from service.models import DataValidationError
 from service import app
 from . import status
-
+import unittest
 
 ######################################################################
 # Error Handlers
@@ -96,3 +96,32 @@ def internal_server_error(error):
         ),
         status.HTTP_500_INTERNAL_SERVER_ERROR,
     )
+
+
+class TestErrorHandlers(unittest.TestCase):
+    def setUp(self):
+        self.app = app.test_client()
+
+    def test_request_validation_error(self):
+        # Test handling DataValidationError
+        with app.app_context():
+            error = DataValidationError("Test validation error")
+            response = request_validation_error(error)
+            self.assertEqual(response[1], HTTP_400_BAD_REQUEST)
+            self.assertIn(b"Bad Request", response[0].data)
+            self.assertIn(b"Test validation error", response[0].data)
+
+    def test_bad_request(self):
+        # Test handling bad request
+        error_message = "Test bad request error"
+        response = bad_request(ValueError(error_message))
+        self.assertEqual(response[1], HTTP_400_BAD_REQUEST)
+        self.assertIn(b"Bad Request", response[0].data)
+        self.assertIn(error_message.encode(), response[0].data)
+
+
+        
+    # Add similar test methods for other error handlers (not_found, method_not_supported, mediatype_not_supported, internal_server_error)
+
+if __name__ == "__main__":
+    unittest.main()
